@@ -80,6 +80,13 @@ public class SensorData{
       return -1;
   }
 
+  public int getLevel()
+  {
+    for(int i=inputs.length();i>=0;i--)
+      if(inputs[i]==1)
+        return i;
+  }
+
   @Override
   public String toString()
   {
