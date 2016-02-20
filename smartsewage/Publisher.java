@@ -25,6 +25,7 @@ public class Publisher{
   {
     System.out.println("Added sensor data listener");
     sensorListeners.add(list);
+    System.out.println("The object is of type "+list.getClass().getName());
   }
 
   public void addRelayCommandListener(RelayCommandListener list)

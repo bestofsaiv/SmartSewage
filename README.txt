@@ -1,6 +1,6 @@
 For compiling:
 move terminal to the code folder.
-Then: 
+Then:
 
 javac *.java
 
@@ -12,7 +12,8 @@ For running:
 move terminal to the tcode folder.
 Then:
 
-java smartsewage.SmartSewageServer
+sudo java -cp ".:smartsewage/mysql-connector-java-5.0.8-bin.jar" smartsewage.SmartSewageServer jdbc:mysql://localhost/smartsewage root 31011995
+
 
 (run terminal as administrator)
 

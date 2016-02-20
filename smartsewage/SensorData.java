@@ -82,9 +82,10 @@ public class SensorData{
 
   public int getLevel()
   {
-    for(int i=inputs.length();i>=0;i--)
+    for(int i=inputs.length-1;i>=0;i--)
       if(inputs[i]==1)
-        return i;
+        return i+1;
+    return 0;
   }
 
   @Override
