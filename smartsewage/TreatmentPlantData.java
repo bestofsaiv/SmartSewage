@@ -1,13 +1,17 @@
 package smartsewage;
 
 import java.sql.*;
+import java.net.*;
 
-public class TreatmentPlantData implements SensorDataListener,RelayCommandListener{
+public class TreatmentPlantData implements SensorDataListener,Runnable{
   private int TpID;
   private int level;
   private String status;
   private Connection connection;
   private String query="select * from treatment_plant where TpID=?";
+  private String update_query="update treatment_plant set level=?, status=? where TpID=?";
+  //A thread that will update the db at the required rate
+  private Thread updater;
   public TreatmentPlantData(int TpID,Connection conn)
   {
     this.TpID=TpID;
@@ -30,10 +34,11 @@ public class TreatmentPlantData implements SensorDataListener,RelayCommandListen
       {
         se.printStackTrace();
       }
+      updater=new Thread(this);
       Publisher.getInstance().addSensorDataListener(this);
     }
     else{
-      System.out.pritnln("Connection does  not exist");
+      System.out.println("Connection does  not exist");
     }
   }
 
@@ -41,7 +46,39 @@ public class TreatmentPlantData implements SensorDataListener,RelayCommandListen
   {
     if(data.getId()==TpID)
     {
-      
+      int old=level;
+      level=data.getLevel();
+      //Setting status based on level
+      if(level>=4)
+      {
+        status="OFF";
+      }
+      else{
+        status="ON";
+      }
+      //update the db if there is a change
+      if(old!=level)
+        updater.start();
+    }
+  }
+
+  public void run()
+  {
+    update();
+  }
+
+  public void update()
+  {
+    try{
+      PreparedStatement ps=connection.prepareStatement(update_query);
+      ps.setInt(1,level);
+      ps.setString(2,status);
+      ps.setInt(3,TpID);
+      ps.execute();
+    }
+    catch(SQLException se)
+    {
+      se.printStackTrace();
     }
   }
 }
