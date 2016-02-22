@@ -81,4 +81,19 @@ public class TreatmentPlantData implements SensorDataListener,Runnable{
       se.printStackTrace();
     }
   }
+
+  public int getLevel()
+  {
+    return level;
+  }
+
+  public int getTpId()
+  {
+    return TpID;
+  }
+
+  public String getStatus()
+  {
+    return status;
+  }
 }

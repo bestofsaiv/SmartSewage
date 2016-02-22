@@ -25,6 +25,7 @@ create table pumping_station(
   lastSwitchedOff datetime,
   durationLastOn time,
   minTimeToEmpty time,
+  status varchar(10),
   primary key (PsID),
   foreign key (PumpID) references pump(PumpID),
   foreign key (TpID) references treatment_plant(TpID)
