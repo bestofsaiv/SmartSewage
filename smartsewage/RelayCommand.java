@@ -16,7 +16,7 @@ public class RelayCommand{
 
   public int getOutput(int pos)
   {
-    if(pos>=output.length)
+    if(pos>=outputs.length)
       return -1;
     else
       return outputs[pos];
@@ -55,6 +55,11 @@ public class RelayCommand{
       outputs=null;
     }
     return outputs;
+  }
+
+  public int getId()
+  {
+    return (int)id;
   }
 
 }

@@ -3,6 +3,7 @@ package smartsewage;
 import java.sql.*;
 import java.net.*;
 import java.util.*;
+import java.io.*;
 
 public class PumpingStationData implements SensorDataListener,RelayCommandListener{
   private int PsID;
@@ -84,13 +85,13 @@ public class PumpingStationData implements SensorDataListener,RelayCommandListen
     }
   }
 
-  public void relayCommandReceived(RelayCommand command)
+  public void relayCommandReceived(final RelayCommand command)
   {
-    if(command.getId()==id)
+    if(command.getId()==PsID)
     {
       dispatcher=new Thread(new Runnable(){
         public void run(){
-          PumpingStationData.this.dispatch();
+          PumpingStationData.this.dispatch(command);
         }
       });
       dispatcher.start();
@@ -123,12 +124,12 @@ public class PumpingStationData implements SensorDataListener,RelayCommandListen
 
   }
 
-  public void dispatch()
+  public void dispatch(RelayCommand command)
   {
     try{
       //Sending command to the board
       PrintWriter out=new PrintWriter(sock.getOutputStream(),true);
-      out.println(cmd.toString());
+      out.println(command.toString());
       //Updating status locally
       String prev=status;
       if(command.getOutput(0)==1&&!status.equals("ON"))
@@ -138,7 +139,7 @@ public class PumpingStationData implements SensorDataListener,RelayCommandListen
       if(prev!=status) //if status has changed, update database
       {
         //update the database
-        
+
       }
     }
     catch(IOException ex)
