@@ -50,5 +50,4 @@ PsID int not null,
 level int,
 time datetime,
 primary key (seqnum),
-foreign key (PsID) references pumping_station(PsID)
 );

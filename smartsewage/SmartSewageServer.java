@@ -91,11 +91,14 @@ public class SmartSewageServer{
   */
   static public void main(String[] args)
   {
-    if(args.length!=3)
+    if(args.length!=5)
     {
-      System.out.println("Three paramenters required : <Connection string> <username> <password>");
+      System.out.println("Five paramenters required : <Connection string> <username> <password> <treatment plant ID> <Scheduling interval in milliseconds>");
       return;
     }
+
+    final SmartScheduler sch=new SmartScheduler(Integer.parseInt(args[3]),args[0],args[1],args[2],Long.parseLong(args[4]));
+    SensorDataLogger logger=new SensorDataLogger(args[0],args[1],args[2]);
     Thread t=new Thread(new Runnable(){
       @Override
       public void run(){
@@ -113,11 +116,10 @@ public class SmartSewageServer{
       @Override
       public void run()
       {
-          DummyScheduler sch=new DummyScheduler();
+
           sch.startScheduler();
       }
     });
-    SensorDataLogger logger=new SensorDataLogger(args[0],args[1],args[2]);
     t.start();
     t2.start();
     while(true) //Keeping the system running forever

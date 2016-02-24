@@ -2,8 +2,9 @@ package smartsewage;
 
 import java.sql.*;
 import java.net.*;
+import java.util.*;
 
-public class PumpingStationData implements SensorDataListener,Runnable{
+public class PumpingStationData implements SensorDataListener,RelayCommandListener{
   private int PsID;
   private String location;
   private int priority;
@@ -12,22 +13,24 @@ public class PumpingStationData implements SensorDataListener,Runnable{
   private Timestamp lastSwitchedOff;
   private Time durationLastOn;
   private Time minTimeToEmpty;
+  private Time minRunTime;
   private String status;
   private Connection connection;
   //private PumpData pump;
   private Socket sock;
   //A thread that will update the db at the required rate
-  private Thread updater;
+  private Thread updater,dispatcher;
 
   private String query="select * from pumping_station where PsID=?";
 
-  private String query_update_sensor="update pumping_station set minTimeToEmpty=?, status= ? where PsID=?";
-  private String query_update_relay="update pumping_station set durationLastOn=? , lastSwitchedOff=? , status=?";
+  private String query_update_sensor="update pumping_station set level=?, minTimeToEmpty=?, status= ? where PsID=?";
+  private String query_update_relay="update pumping_station set durationLastOn=? , lastSwitchedOff=? , status=? where PsID=?";
 
-  public PumpingStationData(int PsID,Connection conn)
+  public PumpingStationData(int PsID,Connection conn,Time minRunTime)
   {
     this.PsID=PsID;
     this.connection=conn;
+    this.minRunTime=minRunTime;
     if(conn!=null)
     {
       try{
@@ -55,7 +58,6 @@ public class PumpingStationData implements SensorDataListener,Runnable{
       {
         se.printStackTrace();
       }
-      updater=new Thread(this);
       Publisher.getInstance().addSensorDataListener(this);
     }
     else{
@@ -70,25 +72,48 @@ public class PumpingStationData implements SensorDataListener,Runnable{
     {
       int old=level;
       level=data.getLevel();
-      if(old!=level)
+      if(old!=level){
+        updater=new Thread(new Runnable(){
+          public void run()
+          {
+            PumpingStationData.this.update();
+          }
+        });
         updater.start();
+      }
+    }
+  }
+
+  public void relayCommandReceived(RelayCommand command)
+  {
+    if(command.getId()==id)
+    {
+      dispatcher=new Thread(new Runnable(){
+        public void run(){
+          PumpingStationData.this.dispatch();
+        }
+      });
+      dispatcher.start();
     }
   }
 
   public void update()
   {
     //Calculate min time to empty
-    //minTimeToEmpty=(level*capacity/5)/pumpingrate;
+    minTimeToEmpty=new Time(((level*capacity/5)/50)*1000);
     if(status.equals("OFF")){
-      /*if((minTimeToEmpty>=minRunTime)&&System.currentTimeMillis()-lastSwitchedOff.getTime()>=durationLastOn.getTime())
+      if((minTimeToEmpty.getTime()>=minRunTime.getTime())&&System.currentTimeMillis()-lastSwitchedOff.getTime()>=durationLastOn.getTime())
       {
         status="AVAILABLE";
-      }*/
+      }
+    }
       try{
+        System.out.println("Level = "+level);
         PreparedStatement ps=connection.prepareStatement(query_update_sensor);
-        ps.setTime(1,minTimeToEmpty);
-        ps.setString(2,status);
-        ps.setInt(3,PsID);
+        ps.setInt(1,level);
+        ps.setTime(2,minTimeToEmpty);
+        ps.setString(3,status);
+        ps.setInt(4,PsID);
         ps.execute();
       }
       catch(SQLException se)
@@ -96,8 +121,30 @@ public class PumpingStationData implements SensorDataListener,Runnable{
         se.printStackTrace();
       }
 
-    }
+  }
 
+  public void dispatch()
+  {
+    try{
+      //Sending command to the board
+      PrintWriter out=new PrintWriter(sock.getOutputStream(),true);
+      out.println(cmd.toString());
+      //Updating status locally
+      String prev=status;
+      if(command.getOutput(0)==1&&!status.equals("ON"))
+        status="ON";
+      else if(status.equals("ON"))
+        status="OFF";
+      if(prev!=status) //if status has changed, update database
+      {
+        //update the database
+        
+      }
+    }
+    catch(IOException ex)
+    {
+      System.out.println(ex.getMessage());
+    }
   }
 
   public void run()
@@ -159,9 +206,9 @@ public class PumpingStationData implements SensorDataListener,Runnable{
   /**
   * Static method used to get and generate all the pumping stations belonging to a given treatment plant
   */
-  public static ArrayList<PumpingStation> getPumpingStations(int TpID,Connection conn)
+  public static ArrayList<PumpingStationData> getPumpingStations(int TpID,Connection conn,Time minRunTime)
   {
-    ArrayList<PumpingStation> list=new ArrayList<PumpingStation>();
+    ArrayList<PumpingStationData> list=new ArrayList<PumpingStationData>();
     if(conn!=null)
     {
       try{
@@ -172,7 +219,7 @@ public class PumpingStationData implements SensorDataListener,Runnable{
         while(rs.next())
         {
           int PsID=rs.getInt("PsID");
-          PumpingStation new_pumping_station=new PumpingStation(PsID,conn);
+          PumpingStationData new_pumping_station=new PumpingStationData(PsID,conn,minRunTime);
           list.add(new_pumping_station);
         }
       }

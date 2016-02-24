@@ -14,6 +14,14 @@ public class RelayCommand{
       out=0;
   }
 
+  public int getOutput(int pos)
+  {
+    if(pos>=output.length)
+      return -1;
+    else
+      return outputs[pos];
+  }
+
   public void setOutputs(byte[] outs)
   {
     for(int i=0;i<4;i++)

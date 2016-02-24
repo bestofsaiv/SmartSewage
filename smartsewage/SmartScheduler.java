@@ -1,8 +1,12 @@
 package smartsewage;
 
-public class SmartScheduler extends Scheduler{
-  private TreatmentPlant tp;
-  private ArrayList<PumpingStation> ps;
+import java.util.*;
+import java.sql.*;
+import java.net.*;
+
+public class SmartScheduler extends Scheduler implements Runnable{
+  private TreatmentPlantData tp;
+  private ArrayList<PumpingStationData> ps;
   /**
   * The username of the database to be connected to
   */
@@ -23,12 +27,19 @@ public class SmartScheduler extends Scheduler{
   * The databse connection object to add the data to the database
   */
   private Connection connection;
+  /**
+  * The interval at which scheduling has to take place
+  */
+  private long schedInterval;
 
-  public SmartScheduler(int TpID,String conn,String user,String pwd)
+  private Time minRunTime;
+
+  public SmartScheduler(int TpID,String conn,String user,String pwd,long schedInterval)
   {
-    connection=conn;
+    connectionString=conn;
     username=user;
     password=pwd;
+    minRunTime=Time.valueOf("00:30:00");
     try{
       //STEP 2: Register JDBC driver
       Class.forName("com.mysql.jdbc.Driver");
@@ -38,8 +49,8 @@ public class SmartScheduler extends Scheduler{
       connection = DriverManager.getConnection(connectionString,username,password);
       connected=true;
       System.out.println("Connected");
-      tp=new TreatmentPlant(TpID,connection);
-      ps=PumpingStation.getPumpingStations(TpID,connection);
+      tp=new TreatmentPlantData(TpID,connection);
+      ps=PumpingStationData.getPumpingStations(TpID,connection,minRunTime);
     }
     catch(SQLException se){
       //Handle errors for JDBC
@@ -49,5 +60,17 @@ public class SmartScheduler extends Scheduler{
    {
      ce.printStackTrace();
    }
+  }
+
+  @Override
+  public void startScheduler()
+  {
+    Thread sch=new Thread(this);
+    sch.start();
+  }
+
+  public void run()
+  {
+    
   }
 }

@@ -1,0 +1,5 @@
+1) Reaching level 4 on continuois days in same pumping station
+2) Reaching level 4 on multiple pum ping stations at the same time
+3) Sharp peaks in the treatment plant levels within the same day
+4) " " " " " " " " " " within a year or at the same time of year(taking into account a few years as sample)
+5) More than three pumping stations at the same time causing exceeding capacity of the system
